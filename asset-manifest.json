@@ -1,12 +1,12 @@
 {
   "files": {
     "main.css": "/pantese/static/css/main.7a232b14.css",
-    "main.js": "/pantese/static/js/main.0c3b3bec.js",
-    "static/js/171.627d70ef.chunk.js": "/pantese/static/js/171.627d70ef.chunk.js",
+    "main.js": "/pantese/static/js/main.74b9cbdb.js",
+    "static/js/171.00dc1f0e.chunk.js": "/pantese/static/js/171.00dc1f0e.chunk.js",
     "static/css/983.38ccf2e8.chunk.css": "/pantese/static/css/983.38ccf2e8.chunk.css",
     "static/js/983.5fcb3e24.chunk.js": "/pantese/static/js/983.5fcb3e24.chunk.js",
     "static/css/972.e1ac92d6.chunk.css": "/pantese/static/css/972.e1ac92d6.chunk.css",
-    "static/js/972.fbf78895.chunk.js": "/pantese/static/js/972.fbf78895.chunk.js",
+    "static/js/972.91177cc3.chunk.js": "/pantese/static/js/972.91177cc3.chunk.js",
     "static/js/102.895501f0.chunk.js": "/pantese/static/js/102.895501f0.chunk.js",
     "static/media/a0bg.png": "/pantese/static/media/a0bg.e77b672760d00b7226bc.png",
     "static/media/a1paineis.png": "/pantese/static/media/a1paineis.ef1864b99e3e4d7e97de.png",
@@ -158,16 +158,16 @@
     "static/media/0xrayp12f1.webp": "/pantese/static/media/0xrayp12f1.87a43af210f725fd062b.webp",
     "index.html": "/pantese/index.html",
     "main.7a232b14.css.map": "/pantese/static/css/main.7a232b14.css.map",
-    "main.0c3b3bec.js.map": "/pantese/static/js/main.0c3b3bec.js.map",
-    "171.627d70ef.chunk.js.map": "/pantese/static/js/171.627d70ef.chunk.js.map",
+    "main.74b9cbdb.js.map": "/pantese/static/js/main.74b9cbdb.js.map",
+    "171.00dc1f0e.chunk.js.map": "/pantese/static/js/171.00dc1f0e.chunk.js.map",
     "983.38ccf2e8.chunk.css.map": "/pantese/static/css/983.38ccf2e8.chunk.css.map",
     "983.5fcb3e24.chunk.js.map": "/pantese/static/js/983.5fcb3e24.chunk.js.map",
     "972.e1ac92d6.chunk.css.map": "/pantese/static/css/972.e1ac92d6.chunk.css.map",
-    "972.fbf78895.chunk.js.map": "/pantese/static/js/972.fbf78895.chunk.js.map",
+    "972.91177cc3.chunk.js.map": "/pantese/static/js/972.91177cc3.chunk.js.map",
     "102.895501f0.chunk.js.map": "/pantese/static/js/102.895501f0.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.7a232b14.css",
-    "static/js/main.0c3b3bec.js"
+    "static/js/main.74b9cbdb.js"
   ]
 }
