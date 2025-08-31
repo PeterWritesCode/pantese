@@ -16,7 +16,7 @@ const root = createRoot(rootElement);
 
 root.render(
   <Suspense fallback={<div>Loading...</div>}>
-    <BrowserRouter>
+    <BrowserRouter basename={process.env.PUBLIC_URL}>
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/page2" element={<Page2 />} />

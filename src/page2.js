@@ -14,7 +14,6 @@ import './page2.css';
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 // Import images
-
 let bgImages = getImages(require.context('./imagesTest/page2/bgfg', true));
 let cortePainel= getImages(require.context('./imagesTest/page2/cortepainel', true));
 let narizImages = getImages(require.context('./imagesTest/page2/frames/narizFrames', true));
@@ -24,13 +23,10 @@ let panteraCommon = getImages(require.context('./imagesTest/common/panteraFrames
 let lastPanel = getImages(require.context('./imagesTest/page2/lastpanel', true));
 
 // Scroll control flags
-
 let panel3fallFired = false;
 let panel3panteraFired = false;
 let panel6fallFired = false;
 let panel10cimentoFired = false;
-// Lenis instance (we’ll initialize it only after images are loaded)
-
 
 export default function Page2() {
   const mainRef = useRef(null);
@@ -63,7 +59,7 @@ export default function Page2() {
   const cancel = () => {
     if (!cancelledRef.current) {
       cancelledRef.current = true;
-      setCancelled(true); // triggers re-render -> removes {!cancelled && (...) } block
+      setCancelled(true); 
     }
   };
   const cancelCorte = () => {
@@ -103,10 +99,7 @@ export default function Page2() {
     };
 }, []);
 
-  // Preload images before initializing everything
    useEffect(() => {
-    
-    // Gather and dedupe URLs
     const urls = Array.from(
       new Set([...narizImages, ...panteraImages, ...cortePainel])
     );
@@ -129,8 +122,8 @@ export default function Page2() {
         handleRef.current = await preloadImages(urls, {
            concurrency: 8,
            keepAlive: true,
-           tolerateErrors: true,       // don't abort all on a single failure
-           crossOrigin: "anonymous",   // if you draw to canvas; otherwise omit
+           tolerateErrors: true,       
+           crossOrigin: "anonymous",  
            revokeBlobURLsOnRelease: false,
            label: "page 2",
          });
@@ -144,7 +137,7 @@ export default function Page2() {
        } catch (err) {
          if (!cancelledRef.current || !bgCancelledRef.current) {
            console.error("preloadImages failed", err);
-           // proceed anyway if you prefer
+
            setReady(true);
          }
        }
@@ -162,8 +155,7 @@ export default function Page2() {
 
    }, []);
     
-  // because of the transition from App.js to page2.js we need to reset lenis and scrolltrigger, and start both of them once page2 loads. 
-  // We only do it after preloading so the user can't scroll on an empty page 
+
   useLayoutEffect(() => {
   if (!ready || !mainRef.current) return;
 
@@ -251,24 +243,21 @@ export default function Page2() {
   });
 
   return () => {
-    // Kill all ScrollTriggers for this page
+
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     ScrollTrigger.clearMatchMedia();
 
-    // Cancel RAF loop
     if (rafIdRef.current) {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = null;
     }
 
-    // Destroy Lenis
     if (lenisRef.current) {
       lenisRef.current.off("scroll", handleScroll);
       lenisRef.current.destroy();
       lenisRef.current = null;
     }
 
-    // Do NOT release images here (useEffect cleanup already does it)
   };
 }, [ready]);
 
@@ -433,7 +422,7 @@ export default function Page2() {
         if (!panel3fallFired && self.progress >= 0.999) {
         panel3fallFired = true;
         panel3Fall?.play();
-        // Clear the callback after firing
+        // Clear the callback after firing, not sure what this does, but I think it's good
         self.vars.onUpdate = null;
         }
       }
@@ -516,6 +505,8 @@ export default function Page2() {
       const duration = 0.2; //time duration for each time it switches opacity, the lower the faster
       const times = Math.floor(3 / duration); //Divides the duration of the rotation to know how many times it needs to switch opacity
 
+      //This would be much simpler if I did the img src swap like on page3 instead of doing this nonsense.
+      //It works but is janky, priority for changes.
       for (let i = 0; i <= times; i++) {
         const time = i * duration;
         if (i % 2 === 0) {
@@ -748,6 +739,7 @@ export default function Page2() {
       scrollTrigger: {
         trigger: "#svgfundo",
         start: "top+=60.41%", // start right after previous so we can have a timeline with scrub right in the same spot as a scrubless one
+        //This could be done another way now, but it not only works, the other way might be more complicated. At least I found out and applied it to page3
         end: "+=600%",             
         pin: true,
         scrub: true,
@@ -954,7 +946,7 @@ export default function Page2() {
         blockRef.current.up = false;
         blockRef.current.down = false;
       }
-      // Add cleanup code
+
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
       gsap.killTweensOf("*");
       cancel();

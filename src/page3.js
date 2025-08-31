@@ -24,13 +24,8 @@ let seventhSequence = getImages(require.context('./imagesTest/page3/panels/7thSe
 let eighthSequence = getImages(require.context('./imagesTest/page3/panels/8thSequence', true));
 let ninthSequence = getImages(require.context('./imagesTest/page3/panels/9thSequence', true));
 
-// Scroll control flags
-let firstSequenceDone = false;
 
-
-// Lenis instance (we’ll initialize it only after images are loaded)
 export default function Page3() {  
-  
   const mainRef = useRef(null);
   const [ready, setReady] = useState(false);
   const lenisRef = useRef(null);
@@ -112,11 +107,18 @@ export default function Page3() {
     cancelFirstSequence();
     cancelSecondSequence();
     cancelExtraSequence(); 
+    cancelThirdSequence();
+    cancelFourthSequence();
+    cancelFifthSequence();
+    cancelSixthSequence();
+    cancelSeventhSequence();
+    cancelEighthSequence();
+    cancelNinthSequence();
   };
   const cancelFirstSequence = () => {
     if (!cancelledFirstSequenceRef.current) {
       cancelledFirstSequenceRef.current = true;
-      setCancelledFirstSequence(true); // triggers re-render -> removes {!cancelled && (...) } block
+      setCancelledFirstSequence(true); // triggers re-render -> removes {!cancelled && (...) } from html and also removes the ScrollTrigger timelines associated!
     }
   };
   const cancelSecondSequence = () => {
@@ -181,7 +183,7 @@ export default function Page3() {
         const next = prev + 1;
         return next > 14 ? 12 : next; // loop 12 → 14
         });
-    }, 300); // 0.3 seconds
+    }, 300); 
     return () => clearInterval(interval);
   }, []);
 
@@ -208,13 +210,8 @@ export default function Page3() {
 
   // Preload images before initializing everything
    useEffect(() => {
-        if (startedPreloadRef.current) return; // guard double-mount in React 18 StrictMode (dev)
+        if (startedPreloadRef.current) return; // prevent double preloading, this is for react 18 developer mode only. Could cause lag if it happens several times
         startedPreloadRef.current = true;
-    // Gather and dedupe URLs
-    /*const urls = Array.from(
-      new Set([ //INSERT URLS HERE LIKE ...narizP1, ...narizP2 ])
-    );
-    */
 
    (async () => {
 
@@ -255,7 +252,7 @@ export default function Page3() {
            secondSequenceHandleRef.current?.release?.();
            return;
          }
-         // Preload extraSequence images
+         // Preload extraSequence images - These were not expected, but had to be added for the sequence where the app scrolls up
          extraHandleRef.current = await preloadImages([...extraSequence], {
            concurrency: 8,
            keepAlive: true,
@@ -269,7 +266,8 @@ export default function Page3() {
        } catch (err) {
          if (!cancelledFirstSequenceRef.current || !bgCancelledRef.current || !cancelledSecondSequenceRef.current) {
            console.error("preloadImages failed", err);
-           // proceed anyway if you prefer
+           //Sets Ready anyway. So far, this has never happened, and it usually loads all images. If one of the images doesn't load it's very likely to be a single frame of an animation
+           //which is not critical for the initial load
            setReady(true);
          }
        }
@@ -295,9 +293,11 @@ export default function Page3() {
      };
 
    }, []);
-    
-  // because of the transition from App.js to page2.js we need to reset lenis and scrolltrigger, and start both of them once page2 loads. 
-  // We only do it after preloading so the user can't scroll on an empty page 
+  
+  // Lenis instance (gets initialized only after images are loaded)
+  // because of the transitions from page to page, lenis and scrolltriggers need to be reset. They can only be started once page2 loads
+  // otherwise it is very likely that the page will either exhibit strange behavior in the form of blinking, or freeze completely.
+  // We only do it after preloading so the user can't scroll on an empty page
   useLayoutEffect(() => {
   if (!ready || !mainRef.current) return;
 
@@ -343,12 +343,11 @@ export default function Page3() {
   rafIdRef.current = requestAnimationFrame(raf);
 
   // Wait for DOM <img> elements in this page to fully load/decode,
-  // then refresh ScrollTrigger so measurements include intrinsic sizes.
+  // then refresh ScrollTrigger so measurements include image sizes
   const scope = mainRef.current;
   const imgs = Array.from(scope.querySelectorAll("img"));
   const waitForDomImages = Promise.all(
     imgs.map((img) => {
-      // First wait for load/error event if not complete
       const settled =
         img.complete
           ? Promise.resolve()
@@ -356,30 +355,29 @@ export default function Page3() {
               img.onload = img.onerror = () => res();
             });
 
-      // Then try decode() for proper layout-ready bitmaps
       return settled.then(() =>
         typeof img.decode === "function" ? img.decode().catch(() => {}) : undefined
       );
     }),
-    console.log("waited for images, done!")
+    //console.log("waited for images, done!")
   );
-  console.log("going to try entering waitForDomImages");
+  //console.log("going to try entering waitForDomImages");
   waitForDomImages.then(() => {
-    // Give the browser a paint, then refresh
-    console.log("Going to refresh ScrollTrigger and request a frame:");
-    console.log("I am going to unblock scroll after that!");
+ 
+    //console.log("Going to refresh ScrollTrigger and request a frame:");
+    //console.log("I am going to unblock scroll after that!");
     
     requestAnimationFrame(() => {
       ScrollTrigger.refresh(true);
-      console.log("refreshed ScrollTrigger!");
+      //console.log("refreshed ScrollTrigger!");
       setTimeout(() => {
-        console.log("Timeout of 3 seconds reached after unblocking scroll");
-        console.log("unblocked scroll");
+        //console.log("Timeout of 3 seconds reached after unblocking scroll");
+        //console.log("unblocked scroll");
         setActuallyReady(true);
         actuallyReadyRef.current = true;
         blockRef.current.up = false;
         blockRef.current.down = false;
-      }, 3000);
+      }, 2000);
       
     });
     
@@ -387,41 +385,33 @@ export default function Page3() {
   });
 
   return () => {
-    // Kill all ScrollTriggers for this page
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     ScrollTrigger.clearMatchMedia();
 
-    // Cancel RAF loop
     if (rafIdRef.current) {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = null;
     }
 
-    // Destroy Lenis
     if (lenisRef.current) {
       lenisRef.current.off("scroll", handleScroll);
       lenisRef.current.destroy();
       lenisRef.current = null;
     }
-
-    // Do NOT release images here (useEffect cleanup already does it)
   };
 }, [ready]);
 
 useGSAP(() => {
-    
-    console.log("not ready to start GSAP yet!")
+  
+    //console.log("not ready to start GSAP yet!")
     requestAnimationFrame(() => {
-        console.log("refreshing scroll trigger at the beginning!");
+        //This one might not be needed, but testing showed that this provided somewhat of an improvement. It refreshes scrolltrigger before the timelines get activated and
+        //requests an animation frame so the page updates
+        //console.log("refreshing scroll trigger at the beginning!");
         ScrollTrigger.refresh(true);
     });
     if (!ready) {return}; // Ensure images are loaded before running GSAP
-    console.log("removed the block!")
-    
-    //const paineis = gsap.utils.toArray('.paineis');
-    
-    //gsap.set([], { autoAlpha: 0 });
-    
+    //console.log("removed the block!")
     
 
     
@@ -451,9 +441,9 @@ if(!cancelledFirstSequenceRef.current){
             pin: true
         }
         });
-        //we want a bit of nothing at first, so let's add an offset
+        //These offsets are so the animation doesn't start as soon as we scroll into the panel/timeline
         const offsetP2 = 3;
-       narizp1n2.forEach((frame, index) => {
+        narizp1n2.forEach((frame, index) => {
         panel1n2.set(frame, { autoAlpha: 1 }, index * stepDuration + offsetP2);
         if(index>0){
             panel1n2.set(narizp1n2[index-1],{autoAlpha: 0}, index * stepDuration + offsetP2)
@@ -631,11 +621,9 @@ if(!cancelledSecondSequenceRef.current){
         .set('.narizFall', { autoAlpha: 1, scale:0.7, x:300, zIndex:9 })
         .to('.narizFall', { y: 1400, duration: 0.5 })
         .set('.narizFall', { autoAlpha: 0 })
-        .eventCallback("onComplete", () => {blockRef.current.down = false; 
-          
-          
+        .eventCallback("onComplete", () => {
           setTimeout(() => {
-            // You can add any logic here if needed after loading
+            blockRef.current.down = false; 
           }, 3000);
         });
 
@@ -656,6 +644,7 @@ if(!cancelledSecondSequenceRef.current){
             }
         })
           // Only set narizp9[0] to visible after panel9Fall is done
+          // This part was clunky to get right, but it's good enough right now
           for(let i = 0; i < narizp9.length; i++){
             panel9.set(narizp9[i], { autoAlpha: 0 }, i*stepDuration);
             // Only set autoAlpha: 1 for narizp9[1] and onwards
@@ -667,14 +656,14 @@ if(!cancelledSecondSequenceRef.current){
           panel9.to({},{}, narizp9.length * stepDuration + 2);
 }///Second Sequence
 if(!cancelledThirdSequenceRef.current){
-        //This is an array which stores our index and duration intended for each step of panel10.
+        //This is an array which stores the index and duration intended for each step of panel10.
           const panel10Sequence = [
             { index: 0, duration: stepDuration },           // Show 0 for 1 step
             { index: 1, duration: 2 * stepDuration },       // Show 1 for 2 steps
             ...[2,3,4,5].map(i => ({ index: i, duration: stepDuration })), // 1 step each for 2-5
           ];
 
-          // Loop 6-9 six times (store it in the array)
+          // Loop 6-9 six times (nariz and pantera hammering the nail)
           for (let loop = 0; loop < 6; loop++) {
             if(loop === 5){
               [6,7].forEach(i => {
@@ -740,7 +729,7 @@ if(!cancelledThirdSequenceRef.current){
 
           var panel10Slide = gsap.timeline({ paused: true });
 
-            // Step 1: Slide the frame in
+            //Frame slides in
             panel10Slide.to('.panel10Frame', {
               x: '0',
               duration: 1,
@@ -748,12 +737,12 @@ if(!cancelledThirdSequenceRef.current){
               onComplete: () => console.log("Slid panel10!!")
             });
 
-            // Step 2: After slide finishes, go through 26–31
+            //go through frame 26-31
             for (let i = 26; i <= 31; i++) {
               panel10Slide.to({}, {
                 duration: stepDuration/2,
                 onStart: () => setSlideP10Index(i)
-              }, ">"); // ">": start after previous tween ends
+              }, ">"); 
             }
             panel10Slide.eventCallback("onComplete", () => {
               console.log("Completed panel10Slide!");
@@ -769,7 +758,7 @@ if(!cancelledFourthSequenceRef.current){
                 duration: 1,
                 ease: "none",
                 modifiers: {
-                  xPercent: gsap.utils.wrap(-100, 0) // ensures wrap-around
+                  xPercent: gsap.utils.wrap(-100, 0) //wrap around, doesn't stop
                 }
               });
             }
@@ -836,10 +825,10 @@ if(!cancelledFourthSequenceRef.current){
                   gsap.set('.panel13', { autoAlpha: 0 });
                 },
                 onUpdate: self => {
-                  // Calculate progress and map to index
+                  
                   if(self.progress < 0.999){
 
-                  
+                    // get progress!
                     const progress = self.progress;
                     const minIndex = 9;
                     const maxIndex = 22;
@@ -959,21 +948,17 @@ if(!cancelledFifthSequenceRef.current){
                   panel18Fall.play();
                 },
                 onUpdate: self => {
-                   // Calculate progress and map to index
+                   
                   if(self.progress < 0.999){
                     
                     const progress = self.progress;
                     const minIndex = 19;
                     const maxIndex = 31;
-                    //Basically we are subtracting the end frame and the beginning frame and adding 1 to get the number of frames
-                    //This means: 14-9+1, which equals 6. We then multiply it by the progress of the scrollTrigger (a number from 0 to 1)
-                    //Which will give a value between 0 and 6. Math.floor rounds it to the nearest full number so we get steps :D
+                    
                     const preCalc = Math.floor(progress * (maxIndex - minIndex + 1)) + minIndex; 
                     const index = Math.max(minIndex, Math.min(preCalc, maxIndex));
                     if(index === 1) blockRef.current.up = true;
                   
-                    //I was getting an error when scrolling past the scrolltrigger which was changing the image to the next one
-                    //so Math.max should ensure that we don't go below the minimum or above the maximum index
                     setP18Index(index);
                    
                   }
@@ -1023,7 +1008,7 @@ if(!cancelledSixthSequenceRef.current){
                   gsap.set('.panel19', {autoAlpha:1});
                 },
                 onUpdate: self => {
-                  // Calculate progress and map to index
+                  
                   if(self.progress < 0.999){
 
                     const progress = self.progress;
@@ -1113,33 +1098,33 @@ if(!cancelledSeventhSequence.current){
                 .to('.panel21pSlide', {x:0, duration:2})
                 .to({}, {
                   duration: 0.01,
-                  onStart: () => setP21Index(18),             // going forward
-                  onReverseComplete: () => setP21Index(17)    // going backward
+                  onStart: () => setP21Index(18),             
+                  onReverseComplete: () => setP21Index(17)    
                 }, ">")
                 .to({}, {
                   duration: 0.01,
-                  onStart: () => setP21Index(19),             // going forward
-                  onReverseComplete: () => setP21Index(18)    // going backward
+                  onStart: () => setP21Index(19),             
+                  onReverseComplete: () => setP21Index(18)    
                 }, ">1")
                 .to({}, {
                   duration: 0.01,
-                  onStart: () => setP21Index(20),             // going forward
-                  onReverseComplete: () => setP21Index(19)    // going backward
+                  onStart: () => setP21Index(20),             
+                  onReverseComplete: () => setP21Index(19)    
                 }, ">1")
                 .set('.panel21pSlide',{autoAlpha:0},">0.5")
                 .set('.panel21pSlide',{x:-900},"<0.1")
                 
                 .to({}, {
                   duration: 0.01,
-                  onStart: () => setP21Index(21),             // going forward
-                  onReverseComplete: () => setP21Index(20)    // going backward
+                  onStart: () => setP21Index(21),             
+                  onReverseComplete: () => setP21Index(20)    
                 }, ">")
                 .to('.panel21pSlide', {x:0, duration:2},">")
                 .set('.panel21pSlide',{autoAlpha:1},"<0.1")
                 .to({}, {
                   duration: 0.01,
-                  onStart: () => setP21Index(22),             // going forward
-                  onReverseComplete: () => setP21Index(21)    // going backward
+                  onStart: () => setP21Index(22),             
+                  onReverseComplete: () => setP21Index(21)    
                 }, ">1")
                 for(let i = 23; i <= 30; i++){
                   if(i===23){
@@ -1158,8 +1143,8 @@ if(!cancelledSeventhSequence.current){
                 }
                 panel21.to({}, {
                   duration: 0.01,
-                  onStart: () => setP21Index(31),             // going forward
-                  onReverseComplete: () => setP21Index(30)    // going backward
+                  onStart: () => setP21Index(31),             
+                  onReverseComplete: () => setP21Index(30)    
                 }, ">1")
                 panel21.set('.panel21pSlide',{autoAlpha:0},"<")
                 
@@ -1216,7 +1201,7 @@ if(!cancelledEighthSequenceRef.current){
                           }
                         },
                         onUpdate: self => {
-                          // Calculate progress and map to index
+                          
                           if(self.progress < 0.999){
 
                             const progress = self.progress;

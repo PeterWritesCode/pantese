@@ -39,7 +39,7 @@ export default function main() {
   const cancel = () => {
   if (!cancelledRef.current) {
     cancelledRef.current = true;
-    setCancelled(true); // triggers re-render -> removes {!cancelled && (...) } block
+    setCancelled(true); // triggers re-render -> removes {!cancelled && (...) } from html and also removes the ScrollTrigger timelines associated!
   }
 };
   useEffect(() => {
@@ -62,13 +62,13 @@ export default function main() {
         window.removeEventListener("keydown", preventScroll);
       };
   }, []);
+
   //Preload any images that need to be there before the user scrolls to them
   //If you don't, transitions might seem abrupt, bcs the images will be loading as you scroll and the browser will likely buffer and jitter
-  // Preload any images that need to be there before the user scrolls
+ 
 useEffect(() => {
   
-  // Gather and dedupe URLs
-  const urls = Array.from(
+  const imagesSet = Array.from(
     new Set([...xrayFrame, ...bgImages,  ...betterFrames])
   );
 
@@ -87,7 +87,7 @@ useEffect(() => {
         return;
       }
 
-      handle.current = await preloadImages(urls, {
+      handle.current = await preloadImages(imagesSet, {
         concurrency: 8,
         keepAlive: true,
         tolerateErrors: true,       // don't abort all on a single failure
@@ -107,7 +107,8 @@ useEffect(() => {
     } catch (err) {
       if (!cancelledRef.current || !bgCancelledRef.current) {
         console.error("preloadImages failed", err);
-        // proceed anyway if you prefer
+        //Sets Ready anyway. So far, this has never happened, and it usually loads all images. If one of the images doesn't load it's very likely to be a single frame of an animation
+        //which is not critical for the initial load
         setReady(true);
       }
     }
@@ -130,7 +131,10 @@ useEffect(() => {
   useLayoutEffect(() => {
   if (!ready || !mainRef.current) return;
 
-  // Set up Lenis
+  /// Lenis instance (gets initialized only after images are loaded)
+  // because of the transitions from page to page, lenis and scrolltriggers need to be reset. They can only be started once page2 loads
+  // otherwise it is very likely that the page will either exhibit strange behavior in the form of blinking, or freeze completely.
+  // We only do it after preloading so the user can't scroll on an empty page
   lenisRef.current = new Lenis({
     duration: 3,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -171,12 +175,11 @@ useEffect(() => {
   rafIdRef.current = requestAnimationFrame(raf);
 
   // Wait for DOM <img> elements in this page to fully load/decode,
-  // then refresh ScrollTrigger so measurements include intrinsic sizes.
+  // then refresh ScrollTrigger so measurements include image sizes
   const scope = mainRef.current;
   const imgs = Array.from(scope.querySelectorAll("img"));
   const waitForDomImages = Promise.all(
     imgs.map((img) => {
-      // First wait for load/error event if not complete
       const settled =
         img.complete
           ? Promise.resolve()
@@ -184,7 +187,6 @@ useEffect(() => {
               img.onload = img.onerror = () => res();
             });
 
-      // Then try decode() for proper layout-ready bitmaps
       return settled.then(() =>
         typeof img.decode === "function" ? img.decode().catch(() => {}) : undefined
       );
@@ -193,7 +195,6 @@ useEffect(() => {
   );
   console.log("going to try entering waitForDomImages");
   waitForDomImages.then(() => {
-    // Give the browser a paint, then refresh
     console.log("Going to refresh ScrollTrigger and request a frame:");
     console.log("I am going to unblock scroll after that!");
     
@@ -213,24 +214,23 @@ useEffect(() => {
   });
 
   return () => {
-    // Kill all ScrollTriggers for this page
+
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     ScrollTrigger.clearMatchMedia();
 
-    // Cancel RAF loop
+
     if (rafIdRef.current) {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = null;
     }
 
-    // Destroy Lenis
+
     if (lenisRef.current) {
       lenisRef.current.off("scroll", handleScroll);
       lenisRef.current.destroy();
       lenisRef.current = null;
     }
 
-    // Do NOT release images here (useEffect cleanup already does it)
   };
 }, [ready]);
 
@@ -256,9 +256,9 @@ useEffect(() => {
   const narizTabuas = gsap.utils.toArray('.narizTabuas');
 
   gsap.set(frames, { autoAlpha: 0 }); // All invisible
-  gsap.set(xrayFrames, { autoAlpha: 0 }); // All invisible
-  gsap.set(framesp4, { autoAlpha: 0 }); // All invisible
-  gsap.set(framesp7, { autoAlpha: 0 }); // All invisible
+  gsap.set(xrayFrames, { autoAlpha: 0 }); 
+  gsap.set(framesp4, { autoAlpha: 0 }); 
+  gsap.set(framesp7, { autoAlpha: 0 }); 
   gsap.set('.narizMartelo',{autoAlpha:0});   
   gsap.set(framesEscada,{autoAlpha:0});
   gsap.set(narizTabuas,{autoAlpha:0});
@@ -584,7 +584,6 @@ useEffect(() => {
         panel12.kill();
       },
       onLeave: () => {document.body.style.overflow = '';blockRef.current.down = false;console.log("Scroll Down unblocked Nariz Cai") },
-      onLeaveBack: () => {document.body.style.overflow = '';blockRef.current.down = false;console.log("Scroll Down unblocked Nariz Cai")}, // optional
     },
   }).call(()=> {
     blockRef.current.down = true;
@@ -733,7 +732,7 @@ var navigateNext = gsap.timeline({
         {!cancelled && (
           <>
             {/* Outside of the panel */}
-            {/* Place your images/components here that should only show when !cancelled is true */}
+            {/* Place images/components here that should only show when !cancelled is true */}
           
         <img className="narizFrame" src={betterFrames[0]} style={{ position:'absolute', top:'0.45%', left: '-30%', width:'23%', height: 'auto', zIndex:'1',  opacity:0, visibility:'visible'}}/>
         {/* Inside! */}
