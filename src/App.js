@@ -1,9 +1,10 @@
-import React, { useLayoutEffect, useRef, useState, useEffect } from 'react';
+import React, { useLayoutEffect, useRef, useState, useEffect, use } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import { useGSAP } from '@gsap/react';
 import preloadImages from './preloadImages.js';
+import { useAudio } from "./audioPlayer.js";
 import { useImagePreload } from './useImagePreload.js';
 import { useNavigate } from 'react-router-dom';
 import { RemoveScrollBar } from 'react-remove-scroll-bar';
@@ -20,14 +21,22 @@ export default function main() {
   const bgImages = getImages(require.context('./imagesTest/bgfg', true));
   const narizFrames = getImages(require.context('./imagesTest/frames', true));
   const betterFrames = getImages(require.context('./imagesTest/narizFrames', true));
+  const intro = getImages(require.context('./imagesTest/page1/intro', true));
   const lenisRef = useRef(null);
   const rafIdRef = useRef(null);
   const [ready, setReady] = useState(false);
+
   
+  const [visibleLoading, setVisibleLoading] = useState(true);
+  const [loadingScreenIndex, setLoadingScreenIndex] = useState(1);
+  const [readyScreen, setReadyScreen] = useState(false);
+  let readyScreenRef = useRef(false);
+
   const [cancelled, setCancelled] = useState(false);
   const cancelledRef = useRef(false);
   const bgCancelledRef = useRef(false);
   let handleBg = useRef(null);
+  let handleIntro = useRef(null);
   let handle = useRef(null);
   const preloadHandleRef = useRef(null);
   const [actuallyReady, setActuallyReady] = useState(false);
@@ -36,12 +45,105 @@ export default function main() {
   const blockRef = useRef({ up: true, down: true });
   let isScrollLocked = false;
 
+  const { isPlaying, togglePlay } = useAudio();
+
   const cancel = () => {
   if (!cancelledRef.current) {
     cancelledRef.current = true;
     setCancelled(true); // triggers re-render -> removes {!cancelled && (...) } from html and also removes the ScrollTrigger timelines associated!
   }
 };
+
+  const [firstClick, setFirstClick] = useState(false);
+  const [fading, setFading] = useState(false);
+  let firstClickRef = useRef(false);
+
+  const LoadingScreen = ({ readyScreen }) => {
+    
+
+    const handleClick = () => {
+      if (!readyScreen) return;
+
+      if (!firstClickRef.current) {
+        if(!isPlaying){
+          togglePlay();
+        }
+        
+        blockRef.current.up = false;
+        blockRef.current.down = false;
+        setFading(true);
+        firstClickRef.current = true;
+      }
+    };
+    if (firstClick) return null;
+    
+
+    return (
+      <div
+        className="LoadingScreen"
+        onClick={handleClick}
+        style={{
+          // full-screen overlay
+          position: 'fixed',
+          inset: 0,
+          zIndex: 30,
+          // fade
+        }}
+      >
+      
+
+      
+      <>
+        <img
+          src={intro[1]}
+          alt="Loading..."
+          className="loadingScreen"
+          onClick={handleClick}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: 'auto',
+            cursor: readyScreen ? 'pointer' : 'default',
+          }}
+        />
+        {readyScreen && (
+          <img
+            src={intro[0]}
+            alt="Loading..."
+            className="loadingScreen"
+            onClick={handleClick}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: 'auto',
+              cursor: readyScreen ? 'pointer' : 'default',
+            }}
+          />
+        )}
+      </>
+    
+      </div>
+    );
+  };
+
+  useEffect(() => {
+    if (!fading) return;
+
+    const el = document.querySelector('.LoadingScreen');
+    if (!el) return;
+
+    gsap.to(el, {
+      autoAlpha: 0,
+      duration: 1,
+      onComplete: () => setFirstClick(true)
+    });
+
+  }, [fading]);
+  
   useEffect(() => {
       if(actuallyReadyRef.current) return;
   
@@ -74,6 +176,8 @@ useEffect(() => {
 
   (async () => {
     try {
+
+      
       handleBg.current = await preloadImages([...narizFrames], {
         concurrency: 8,
         keepAlive: true,
@@ -202,10 +306,10 @@ useEffect(() => {
       ScrollTrigger.refresh(true);
       console.log("refreshed ScrollTrigger!");
       setTimeout(() => {
-        console.log("Timeout of 3 seconds reached after unblocking scroll");
-        console.log("unblocked scroll");
-        blockRef.current.up = false;
-        blockRef.current.down = false;
+        console.log(readyScreenRef.current);
+        setReadyScreen(true);
+        
+        console.log(readyScreenRef.current);
       }, 3000);
       
     });
@@ -243,6 +347,13 @@ useEffect(() => {
       ScrollTrigger.refresh(true);
     });
   if (!ready) {return}; // Ensure images are loaded before running GSAP
+  if(fading){
+    console.log("Done!")
+    gsap.to('.LoadingScreen', {autoAlpha: 0, duration: 1, onComplete: () => {
+      console.log("Done!")
+      setFirstClick(true);
+    }});
+  }
   console.log("removed the block!")
 
   const frames = gsap.utils.toArray('.narizFrame');
@@ -271,7 +382,7 @@ useEffect(() => {
       end: "+=440%",
       scrub: true,
       pin: true,
-      markers: true
+      markers: false
     },
   });
 
@@ -310,7 +421,7 @@ useEffect(() => {
       end: "+=600%",
       scrub: true,
       pin: true,
-      markers: true
+      markers: false
     },
     }).to('.painel.tres', { autoAlpha: 0, duration: 10, immediateRender:false }) //hold before change
 
@@ -329,7 +440,7 @@ useEffect(() => {
       end: "+=600%",
       scrub: true,
       pin: true,
-      markers: true
+      markers: false
     },
   });
 
@@ -355,7 +466,7 @@ useEffect(() => {
       start: "top+=11%",
       end: "top+=17%",
       scrub: true,
-      markers: true
+      markers: false
     },
   }).to('.panteraP5',{y:-20,duration:10});
   
@@ -366,7 +477,7 @@ useEffect(() => {
       end: "+=600%",
       scrub: true,
       pin: true,
-      markers: true
+      markers: false
     },
   });
  
@@ -383,7 +494,7 @@ useEffect(() => {
       end: "+=1000%",
       scrub: true,
       pin: true,
-      markers: true
+      markers: false
     },
   }).to(framesp6[0], { autoAlpha: 1 , immediateRender:true}, 20)
     .to(framesp6[1], { autoAlpha: 1, immediateRender:true }, 40)
@@ -407,7 +518,7 @@ useEffect(() => {
       end: "+=1500%",
       scrub: true,
       pin: true,
-      markers: true
+      markers: false
     },
   });
   
@@ -471,7 +582,7 @@ useEffect(() => {
       end: "+=600%",
       scrub: true,
       pin: true,
-      markers: true
+      markers: false
     },
   }).to('.narizP9',{rotate:4, duration:0.1})
   .to('.narizP9',{rotate:-8, duration:0.2})
@@ -490,7 +601,7 @@ useEffect(() => {
       start: "top+=40%",
       end: "top+=43%",
       pin: false,
-      markers: true
+      markers: false
     },
   });
 
@@ -520,7 +631,7 @@ useEffect(() => {
       end: "+=200%",
       scrub: true,
       pin: true,
-      markers: true
+      markers: false
     },
   });
 
@@ -539,7 +650,7 @@ useEffect(() => {
       end: "+=880%",
       scrub: true,
       pin: true,
-      markers: true
+      markers: false
     },
   }).set('.narizMartelo',{autoAlpha:0},0);
 
@@ -568,7 +679,7 @@ useEffect(() => {
       start: "top+=50.4%",
       end: "+=880%",
       pin: true,
-      markers: true,
+      markers: false,
       onEnter: () => { 
         blockRef.current.up = true;
         console.log("Scroll Up Blocked Nariz Cai");
@@ -639,7 +750,7 @@ useEffect(() => {
       start: "top+=62.4%",
       end: "+=600%",
       pin: true,
-      markers: true,
+      markers: false,
       onEnter: () => { blockRef.current.up = true;console.log("Scroll Up Blocked narizTLMartelo") },
       onLeave: () => {document.body.style.overflow = '';blockRef.current.down = false; console.log("Scroll Down unblocked narizTLMartelo") },
       onLeaveBack: () => {document.body.style.overflow = '';blockRef.current.down = false; console.log("Scroll Down Unblocked narizTlMartelo2") }, // optional
@@ -710,7 +821,7 @@ var navigateNext = gsap.timeline({
     start: "top+=67.4%",
     end: "+=880%",
     pin: true,
-    markers: true,
+    markers: false,
     onEnter: () => {
       requestAnimationFrame(() => navigate('/page2'));
     },
@@ -723,6 +834,7 @@ var navigateNext = gsap.timeline({
     <section  ref={mainRef} style={{justifyContent:'stretch', display: 'flex', position: 'relative', top: '0', left: '0',overflowY:'hidden !important'}}>
       <RemoveScrollBar/>
       <div id="svgfundo" style={{backgroundColor:'black', display: 'block', width: '100%',overflowX:'hidden'}}>
+        <LoadingScreen readyScreen={readyScreen}/>
         <img src={bgImages[0]} className="background"  style={{ position:'relative', top:'0', left:'0',width: '100%', minHeight:'100vh', height: 'auto' , zIndex: '-1'}} /> {/* blue background */}
         <img src={bgImages[3]} style={{ position:'absolute', top:'0', left:'0',width: '100%', height: 'auto', zIndex: '5'}} /> {/* panels */}
         <img src={bgImages[1]} style={{ position:'absolute', top:'0', left:'0',width: '100%', height: 'auto', zIndex: '2'}} /> {/* objects */}

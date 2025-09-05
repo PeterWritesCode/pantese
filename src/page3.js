@@ -12,6 +12,7 @@ import getWindowSize from './windowSize.js';
 gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollToPlugin);
 
 // Import images
+let intro = getImages(require.context('./imagesTest/page3/intro', true));
 let bgImages = getImages(require.context('./imagesTest/page3/bgfg', true));
 let firstSequence = getImages(require.context('./imagesTest/page3/panels/1stSequence', true));
 let secondSequence = getImages(require.context('./imagesTest/page3/panels/2ndSequence', true));
@@ -91,7 +92,7 @@ export default function Page3() {
   const [p26Index, setP26Index] = useState(30);
   const [lastPanelIndex, setLastPanelIndex] = useState(4);
   const [lpPanteraIndex, setLpPanteraIndex] = useState(5);
-
+  const [introFlag, setIntroFlag] = useState(true);
   let isProgrammedScroll = false;
   let panel4Start = useRef(null);
   let extraHandleRef = useRef(null); 
@@ -371,13 +372,12 @@ export default function Page3() {
       ScrollTrigger.refresh(true);
       //console.log("refreshed ScrollTrigger!");
       setTimeout(() => {
-        //console.log("Timeout of 3 seconds reached after unblocking scroll");
-        //console.log("unblocked scroll");
+        //console.log("Timeout of 2 seconds reached after unblocking scroll");
+        console.log("setActuallyReady(true)");
         setActuallyReady(true);
         actuallyReadyRef.current = true;
-        blockRef.current.up = false;
-        blockRef.current.down = false;
-      }, 2000);
+        
+      }, 3000);
       
     });
     
@@ -400,6 +400,21 @@ export default function Page3() {
     }
   };
 }, [ready]);
+
+useEffect(() => {
+    if (!actuallyReady) return;
+    const intro = document.querySelector('.intro');
+    console.log(intro);
+    if (!intro) return;
+
+    gsap.to(intro, {
+      autoAlpha: 0,
+      duration: 1,
+      onComplete: () => setIntroFlag(false)
+    });
+    blockRef.current.up = false;
+    blockRef.current.down = false;
+  }, [actuallyReady]);
 
 useGSAP(() => {
   
@@ -427,9 +442,6 @@ useGSAP(() => {
 
         gsap.set([...narizp1n2, ...panterap3, ...panterap6, ...panel4Again, ...extraSequence, '.narizFall', ...narizp9], { autoAlpha: 0 });
         gsap.set('.pregos', { autoAlpha: 0 });
-        const width = document.querySelector(".panel12").offsetWidth;
-
-       
         const stepDuration = 1;
 if(!cancelledFirstSequenceRef.current){
         var panel1n2 = gsap.timeline({
@@ -458,7 +470,7 @@ if(!cancelledFirstSequenceRef.current){
             end: "+=800%",
             scrub: true,
             pin: true,
-            markers: true
+            markers: false
             }
         });
         panterap3.forEach((frame, index) => {
@@ -476,7 +488,7 @@ if(!cancelledFirstSequenceRef.current){
             end: "+=800%",
             scrub: true,
             pin: true,
-            markers: true,
+            markers: false,
             onRefresh: function() {
                 panel4Start.current = self.start;
             }
@@ -496,7 +508,7 @@ if(!cancelledFirstSequenceRef.current){
             end: "+=800%",
             scrub: true,
             pin: true,
-            markers: true
+            markers: false
             }
         });
         for(let index=0; index<8; index++){
@@ -530,7 +542,7 @@ if(!cancelledFirstSequenceRef.current){
         end: "+=800%",
         scrub: true,
         pin: true,
-        markers: true,
+        markers: false,
         onUpdate: function(self) {
             if (!panel6Fired && self.progress >= 0.999) {
                 panel6Fired = true;
@@ -575,7 +587,7 @@ if(!cancelledSecondSequenceRef.current){
                 start: "top+=34%",
                 end: "+=300%",
                 pin: true,
-                markers: true,
+                markers: false,
                 onEnter: () => {
                     blockRef.current.up = true;
                     blockRef.current.down = true;
@@ -634,7 +646,7 @@ if(!cancelledSecondSequenceRef.current){
                 end: "+=800%",
                 scrub:true,
                 pin: true,
-                markers: true,
+                markers: false,
                 onEnter: () => {
                     blockRef.current.up = true;
                     blockRef.current.down = true;
@@ -692,7 +704,7 @@ if(!cancelledThirdSequenceRef.current){
               end: "+=2400%",
               scrub: true,
               pin: true,
-              markers: true,
+              markers: false,
               onEnter: () => { blockRef.current.up = true; 
                 cancelSecondSequence(); 
                 secondSequenceHandleRef.current?.release?.();
@@ -771,7 +783,7 @@ if(!cancelledFourthSequenceRef.current){
                 end: "+=800%",
                 scrub: true,
                 pin: true,
-                markers: true,
+                markers: false,
                   onEnter: () => {
                     blockRef.current.up = false;
                     cancelThirdSequence();
@@ -797,7 +809,7 @@ if(!cancelledFourthSequenceRef.current){
                 start: "top+=50%",
                 end: "+=400%",
                 pin: true,
-                markers:true,
+                markers: false,
                 onEnter: async () => {
                   fifthSequenceHandleRef.current = await preloadImages([...fifthSequence], {
                     concurrency:8,
@@ -817,7 +829,7 @@ if(!cancelledFourthSequenceRef.current){
                 end: "+=800%",
                 pin: true,
                 scrub: true,
-                markers:true,
+                markers: false,
                 onEnter: () => {
                   gsap.set('.panel13', { autoAlpha: 1 });
                 },
@@ -858,7 +870,7 @@ if(!cancelledFifthSequenceRef.current){
                 start: "top+=56.7%",
                 end: "+=100%",
                 pin: true,
-                markers:true,
+                markers: false,
                 onEnter: () => {
                   blockRef.current.up = true;
                   blockRef.current.down = true;
@@ -888,7 +900,7 @@ if(!cancelledFifthSequenceRef.current){
                 end: "+=100%",
                 scrub:false,
                 pin: true,
-                markers:true,
+                markers: false,
                 onEnter: () => {
                   blockRef.current.up = true;
                   blockRef.current.down = true;
@@ -941,7 +953,7 @@ if(!cancelledFifthSequenceRef.current){
                 end: "+=600%",
                 scrub:false,
                 pin: true,
-                markers:true,
+                markers: false,
                 onEnter: () => {
                   blockRef.current.up = true;
                   blockRef.current.down = true;
@@ -977,15 +989,19 @@ if(!cancelledSixthSequenceRef.current){
                 end: "+=600%",
                 scrub:true,
                 pin: true,
-                markers:true,
+                markers: false,
                 onEnter: () => {
                   blockRef.current.up = false;
                   blockRef.current.down = false;
                   fifthSequenceHandleRef.current?.release?.();
                   fifthSequenceHandleRef.current = null;
                   cancelFifthSequence();
-                  setTimeout(async () => {
-                    if(seventhSequenceHandleRef.current!=null) return;
+                  
+                    
+                  
+                },
+                onStart: async () => {
+                  if(seventhSequenceHandleRef.current!=null) return;
                     seventhSequenceHandleRef.current = await preloadImages([...seventhSequence], {
                       concurrency:8,
                       keepAlive: true,
@@ -994,8 +1010,6 @@ if(!cancelledSixthSequenceRef.current){
                       revokeBlobURLsOnRelease: false,
                       label: "seventh sequence",
                     })
-                  },1000);
-                  
                 },
                 onLeaveBack: () => {
                   blockRef.current.up = true;
@@ -1035,7 +1049,7 @@ if(!cancelledSeventhSequence.current){
                     end: "+=600%",
                     scrub:true,
                     pin: true,
-                    markers:true,
+                    markers: false,
                     onEnter: () => {
                       gsap.set('.panel20', {autoAlpha:1});
                       blockRef.current.up = false;
@@ -1045,18 +1059,20 @@ if(!cancelledSeventhSequence.current){
                       sixthSequenceHandleRef.current = null;
                       cancelSixthSequence();
 
-                      setTimeout(async () => {
-                        if(eighthSequenceHandleRef.current!=null) return;
-                        eighthSequenceHandleRef.current = await preloadImages([...eighthSequence], {
-                        concurrency:8,
-                        keepAlive: true,
-                        tolerateErrors: true,
-                        crossOrigin: "anonymous",
-                        revokeBlobURLsOnRelease: false,
-                        label: "eighth sequence",
-                        })
-                      },1000);
                       
+                      
+                      
+                    },
+                    onStart: async () => {
+                      if(eighthSequenceHandleRef.current!=null) return;
+                      eighthSequenceHandleRef.current = await preloadImages([...eighthSequence], {
+                      concurrency:8,
+                      keepAlive: true,
+                      tolerateErrors: true,
+                      crossOrigin: "anonymous",
+                      revokeBlobURLsOnRelease: false,
+                      label: "eighth sequence",
+                      })
                     },
                     onLeave: () => {
                       gsap.set('.panel20', {autoAlpha:0});
@@ -1092,7 +1108,7 @@ if(!cancelledSeventhSequence.current){
                     end: "+=1600%",
                     scrub:true,
                     pin: true,
-                    markers:true,
+                    markers: false,
                   }
                 }).set(['.panel21pSlide', '.panel21nSlide'], {x:-900})
                 .to('.panel21pSlide', {x:0, duration:2})
@@ -1175,7 +1191,7 @@ if(!cancelledEighthSequenceRef.current){
                         end: "+=500%",
                         scrub:false,
                         pin: true,
-                        markers:true,
+                        markers: false,
                       },
                       onLeaveBack: () => {
                         blockRef.current.up = true; 
@@ -1192,7 +1208,7 @@ if(!cancelledEighthSequenceRef.current){
                         end: "+=500%",
                         scrub:true,
                         pin: true,
-                        markers:true,
+                        markers: false,
                         onEnter: () => {
                           if(seventhSequenceHandleRef.current != null){
                             cancelSeventhSequence();
@@ -1224,7 +1240,7 @@ if(!cancelledEighthSequenceRef.current){
                       end: "+=500%",
                       scrub:true,
                       pin: true,
-                      markers:true,
+                      markers: false,
                       onEnter: async () => {
                       ninthSequenceHandleRef.current = await preloadImages([...ninthSequence],{
                         concurrency:8,
@@ -1251,7 +1267,7 @@ if(!cancelledEighthSequenceRef.current){
                       end: "+=1800%",
                       scrub:true,
                       pin: true,
-                      markers:true,
+                      markers: false,
                       onUpdate: self => {
                         const progress = self.progress;
                         if(progress <= 0.5){
@@ -1283,7 +1299,7 @@ if(!cancelledNinthSequenceRef.current){
                       end: "+=800%",
                       scrub:true,
                       pin: true,
-                      markers:true,
+                      markers: false,
                       onLeaveBack: () => {
                         blockRef.current.up = true;
                       },
@@ -1303,7 +1319,7 @@ if(!cancelledNinthSequenceRef.current){
                       end: "+=1200%",
                       scrub:true,
                       pin: true,
-                      markers:true,
+                      markers: false,
                       onEnter: () => {
                       gsap.set('.panel30.pantera', {autoAlpha:1});
                     },
@@ -1380,6 +1396,9 @@ useEffect(() => {
       <RemoveScrollBar /> 
       <div id="svgfundo" style={{backgroundColor:'black', display: 'block', width: '100vw',overflowX:'hidden', overflowY:'hidden'}}>
 {/**BG - FG */}
+{introFlag && (
+        <img src={intro[0]} className="intro" decoding="async" loading="eager" style={{ position:'absolute', top:'0', left:'0',width: '100%', height: 'auto' , zIndex: '12', visibility:'visible'}} />
+)}
         <img src={bgImages[0]} className="background" decoding="async" loading="eager"  style={{ position:'relative', top:'0', left:'0',width: '100%', minHeight:'100vh', height: 'auto' , zIndex: '0', visibility:'visible'}} /> {/* blue background */}
         <img src={bgImages[1]} className="paineis" decoding="async" loading="eager" style={{ position:'absolute', top:'0', left:'0',width: '100%', height: 'auto' , zIndex: '6', visibility:'visible'}} /> {/* blue background */}
         <img src={bgImages[2]} className="p4Frame" decoding="async" loading="eager" style={{ position:'absolute', top:'0', left:'0',width: '100%', height: 'auto' , zIndex: '7', visibility:'visible'}} /> {/* blue background */}

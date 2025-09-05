@@ -21,7 +21,7 @@ let panteraImages = getImages(require.context('./imagesTest/page2/frames/pantera
 let narizCommon = getImages(require.context('./imagesTest/common/narizFrames', true));
 let panteraCommon = getImages(require.context('./imagesTest/common/panteraFrames', true));
 let lastPanel = getImages(require.context('./imagesTest/page2/lastpanel', true));
-
+let intro = getImages(require.context('./imagesTest/page2/intro', true));
 // Scroll control flags
 let panel3fallFired = false;
 let panel3panteraFired = false;
@@ -45,6 +45,8 @@ export default function Page2() {
   const [commonCancelled, setCommonCancelled] = useState(false);
   const [actuallyReady, setActuallyReady] = useState(false);
   const actuallyReadyRef = useRef(false);
+  const [loadingDone, setLoadingDone] = useState(false);
+  const [introFlag, setIntroFlag] = useState(true);
 
   const cancelledRef = useRef(false);
   let bgPreloadHandleRef = useRef(null);
@@ -77,6 +79,21 @@ export default function Page2() {
       setCommonCancelled(true);
     }
   };
+
+  useEffect(() => {
+    if (!loadingDone) return;
+    const intro = document.querySelector('.intro');
+    console.log(introFlag);
+    if (!introFlag) return;
+
+    gsap.to(intro, {
+      autoAlpha: 0,
+      duration: 1,
+      onComplete: () => setIntroFlag(false)
+    });
+    blockRef.current.up = false;
+    blockRef.current.down = false;
+  }, [loadingDone]);
 
   useEffect(() => {
     if(actuallyReadyRef.current) return;
@@ -233,9 +250,9 @@ export default function Page2() {
       
       setTimeout(() => {
         console.log("Timeout of 3 seconds reached after unblocking scroll");
-        blockRef.current.up = false;
-        blockRef.current.down = false;
-      }, 3000);
+        setLoadingDone(true);
+        
+      }, 2000);
       console.log("unblocked scroll");
     });
     
@@ -260,8 +277,8 @@ export default function Page2() {
 
   };
 }, [ready]);
-
-    useGSAP(() => {
+  
+useGSAP(() => {
     console.log("not ready to start GSAP yet!")
     requestAnimationFrame(() => {
       console.log("refreshing scroll trigger at the beginning!");
@@ -386,9 +403,7 @@ export default function Page2() {
           panel2.set(p2Empty[0], {autoAlpha:1}, index * stepDuration)
           panel2.set(p2RDC[0], {autoAlpha:0}, index * stepDuration)
         }
-        if(index === lengthWalkP1){
-          panel2.set(frame, { autoAlpha: 0 },(index+1) * stepDuration);
-        }
+       
         if (index > 0) {
           panel2.set(panteraP2[index - 1], { autoAlpha: 0 },index * stepDuration);
         }
@@ -932,7 +947,7 @@ export default function Page2() {
     start: "top+=90%",
     end: "+=300%",
     pin: true,
-    markers: true,
+    markers: false,
     onEnter: () => {
       requestAnimationFrame(() => navigate('/page3'));
     },
@@ -961,6 +976,9 @@ export default function Page2() {
       <RemoveScrollBar /> 
       <div id="svgfundo" style={{backgroundColor:'black', display: 'block', width: '100vw',overflowX:'hidden', overflowY:'hidden'}}>
 {/**BG - FG */}
+{introFlag && (
+        <img src={intro[0]} className="intro" decoding="async" loading="eager" style={{ position:'absolute', top:'0', left:'0',width: '100%', height: 'auto' , zIndex: '12', visibility:'visible'}} />
+)}
         <img src={bgImage1} className="background" decoding="async" loading="eager"  style={{ position:'relative', top:'0', left:'0',width: '100%', minHeight:'100vh', height: 'auto' , zIndex: '0', visibility:'visible'}} /> {/* blue background */}
         <img src={bgImages[1]} className="objetos" decoding="async" loading="eager" style={{ position:'absolute', top:'0', left:'0',width: '100%', height: 'auto' , zIndex: '2', visibility:'visible'}} /> {/* blue background */}
         <img src={bgImages[2]} className="paineis" decoding="async" loading="eager" style={{ position:'absolute', top:'0', left:'0',width: '100%', height: 'auto' , zIndex: '6', opacity: 1, visibility:'visible'}} /> {/* blue background */}
